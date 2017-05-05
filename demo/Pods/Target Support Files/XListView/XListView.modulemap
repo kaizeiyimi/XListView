@@ -1,0 +1,6 @@
+framework module XListView {
+  umbrella header "XListView-umbrella.h"
+
+  export *
+  module * { export * }
+}

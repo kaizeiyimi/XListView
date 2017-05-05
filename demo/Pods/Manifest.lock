@@ -1,0 +1,23 @@
+PODS:
+  - RxCocoa (3.3.1):
+    - RxSwift (~> 3.3)
+  - RxSwift (3.3.1)
+  - XListView (0.0.1)
+
+DEPENDENCIES:
+  - RxCocoa
+  - RxSwift
+  - XListView (from `../`)
+
+EXTERNAL SOURCES:
+  XListView:
+    :path: ../
+
+SPEC CHECKSUMS:
+  RxCocoa: 7dcb7a1860fc9cd0e23dae67ab105fc2916670b6
+  RxSwift: 8fc9f2de6275a9101d518444e00bf32f1a42caac
+  XListView: 4aad0cfe9cefa1be1ef3e754abf80bbb37f8c2d9
+
+PODFILE CHECKSUM: b7436e3715ee7061269b914431fbcbf57440bd77
+
+COCOAPODS: 1.2.1

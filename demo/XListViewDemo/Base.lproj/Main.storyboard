@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12118" systemVersion="16E195" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="2qy-SC-hmv">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12086"/>
+        <capability name="Navigation items with more than one left or right bar item" minToolsVersion="7.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--List-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="XListViewDemo" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="y3c-jy-aDJ"/>
+                        <viewControllerLayoutGuide type="bottom" id="wfy-db-euE"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6rJ-Il-2Dw" customClass="XListView" customModule="XListView">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="6rJ-Il-2Dw" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" id="Tb7-Rt-CXx"/>
+                            <constraint firstItem="6rJ-Il-2Dw" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="Wp9-yw-VNa"/>
+                            <constraint firstItem="6rJ-Il-2Dw" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" id="pQu-0c-cCY"/>
+                            <constraint firstItem="6rJ-Il-2Dw" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="vto-U7-gfU"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="List" id="oHp-T1-PEX">
+                        <leftBarButtonItems>
+                            <barButtonItem title="move" id="nqv-zI-CUL">
+                                <connections>
+                                    <action selector="move:" destination="BYZ-38-t0r" id="ZRb-hK-mlX"/>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem title="endEditing" id="y00-7b-Ftl">
+                                <connections>
+                                    <action selector="endEditing" destination="BYZ-38-t0r" id="Kvb-Vm-aq2"/>
+                                </connections>
+                            </barButtonItem>
+                        </leftBarButtonItems>
+                        <rightBarButtonItems>
+                            <barButtonItem title="add" id="hk2-gI-nZG">
+                                <connections>
+                                    <action selector="addBox:" destination="BYZ-38-t0r" id="1t5-9u-iR8"/>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem title="remove" id="y1D-cC-tkb">
+                                <connections>
+                                    <action selector="removeBox:" destination="BYZ-38-t0r" id="0N3-Dd-h6x"/>
+                                </connections>
+                            </barButtonItem>
+                        </rightBarButtonItems>
+                    </navigationItem>
+                    <connections>
+                        <outlet property="listView" destination="6rJ-Il-2Dw" id="zgH-do-iyQ"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="986.39999999999998" y="-545.57721139430294"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="bgZ-tK-N7o">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="2qy-SC-hmv" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="z4K-cR-Ej7">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="BYZ-38-t0r" kind="relationship" relationship="rootViewController" id="b6Y-Vo-mpb"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="TWV-1O-NuD" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="133.59999999999999" y="-545.57721139430294"/>
+        </scene>
+    </scenes>
+</document>
