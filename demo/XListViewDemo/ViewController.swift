@@ -11,22 +11,30 @@ import XListView
 import RxCocoa
 
 class ViewController: UIViewController {
+    class MarginView: UIView {
+        func setup(_ view: UIView, margins: UIEdgeInsets = .zero) -> MarginView {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
+            let views = ["view": view]
+            
+            NSLayoutConstraint.activate(
+                NSLayoutConstraint.constraints(withVisualFormat: "H:|-\(margins.left)-[view]-\(margins.right)-|", options: [], metrics: nil, views: views)
+            )
+            NSLayoutConstraint.activate(
+                NSLayoutConstraint.constraints(withVisualFormat: "V:|-\(margins.top)-[view]-\(margins.bottom)-|", options: [], metrics: nil, views: views)
+            )
+            return self
+        }
+    }
     
     enum PageItem: XListViewDataSourceItem {
         case box(String?, UIColor, () -> Void)
         case template(UIView, UIEdgeInsets)
         
-        var xListViewManagedItemIdentifier: String? {
-            switch self {
-            case let .box(info): return info.0
-            default: return nil
-            }
-        }
-        
-        func makeXListViewManagedItem() -> XListView.ManagedItem {
+        func makeXListManagedView() -> UIView {
             switch self {
             case let .template(view, margins):
-                return XListView.ManagedItem(view: view, margins: margins)
+                return MarginView().setup(view, margins: margins)
                 
             case let .box(_, color, action):
                 let box = TouchFeedbackView()
@@ -78,7 +86,7 @@ class ViewController: UIViewController {
                 box.contentView.addSubview(inner)
                 
                 if Int(height) % 3 == 0 {
-                    box.setActive = {[weak box] in box?.setActiveUsingMaskBoard(isActive: $0.0, animated: $0.1)}
+                    box.onStateChange = {[weak box] in box?.setStateUsingMaskBoard()($0) }
                     let input = UITextField()
                     input.translatesAutoresizingMaskIntoConstraints = false
                     box.contentView.addSubview(input)
@@ -106,7 +114,7 @@ class ViewController: UIViewController {
                     box.onTap = action
                 }
                 
-                return XListView.ManagedItem(view: box, margins: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10))
+                return MarginView().setup(box, margins: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10))
             }
         }
         
@@ -144,7 +152,7 @@ class ViewController: UIViewController {
             })
         })
         
-        dataSource.reset([.template(view1, UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10))])
+        dataSource.reset(items: [.template(view1, UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10))])
     }
     
     func makeBoxItem() -> PageItem {
@@ -169,15 +177,15 @@ class ViewController: UIViewController {
         
         let index = Int(arc4random() % UInt32(dataSource.items.count + 1))
         
-        dataSource.insert(makeBoxItem(), at: index, animations: Animations.addOneFromLeft())
+        dataSource.insert(item: makeBoxItem(), at: index, animations: Animations.insertOneFromLeft())
     }
     
     func replace() {
         let index = Int(arc4random() % UInt32(dataSource.items.count))
         if dataSource.items.count >= 7 {
-            dataSource.replace(makeBoxItem(), at: index)
+            dataSource.replace(item: makeBoxItem(), at: index)
         } else {
-            dataSource.replace([makeBoxItem(), makeBoxItem()], at: index)
+            dataSource.replace(items: [makeBoxItem(), makeBoxItem()], at: index)
         }
     }
     
@@ -201,7 +209,7 @@ class ViewController: UIViewController {
             to = (from + 1) % dataSource.items.count
         }
         
-        dataSource.move(fromIndex: from, to: to)
+        dataSource.move(from: from, to: to)
     }
     
     @IBAction func endEditing() {
@@ -216,7 +224,7 @@ class ViewController: UIViewController {
             second = (first + 1) % dataSource.items.count
         }
         
-        dataSource.remove([first, second])
+        dataSource.remove(indexes: [first, second])
     }
 }
 

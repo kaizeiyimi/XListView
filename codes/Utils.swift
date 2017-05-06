@@ -9,128 +9,122 @@ import UIKit
 
 
 public enum Animations {
-    public static func addOne(duration: TimeInterval = 0.3) -> (XListView, UIView) -> Void {
-        return { listView, container in
-            container.alpha = 0
-            UIView.animate(withDuration: duration, animations: {
-                listView.layoutIfNeeded()
-                container.alpha = 1
-            })
+    
+    public typealias ReplaceOne = (XListView, _ removed: UIView, _ inserted: UIView, _ completion: @escaping () -> Void) -> Void
+    public typealias ReplaceMulti = (XListView, _ removed: [UIView], _ inserted: [UIView], _ completion: @escaping () -> Void) -> Void
+    
+    public typealias RemoveOne = (XListView, UIView, _ completion: @escaping () -> Void) -> Void
+    public typealias RemoveMulti = (XListView, [UIView], _ completion: @escaping () -> Void) -> Void
+    
+    public typealias MoveOne = (XListView, UIView, _ from: CGRect, _ to: CGRect) -> Void
+    
+    public typealias InsertOne = (XListView, UIView) -> Void
+    public typealias InsertMulti = (XListView, [UIView]) -> Void
+    
+    
+    public static func replaceOne(duration: TimeInterval = 0.3) -> ReplaceOne {
+        return { (listView, removed, inserted, completion) in
+            replaceMulti(duration: duration)(listView, [removed], [inserted], completion)
         }
     }
     
-    public static func addMulti(duration: TimeInterval = 0.3) -> (XListView, [UIView]) -> Void {
-        return { listView, containers in
-            containers.forEach { container in
-                container.alpha = 0
-            }
+    public static func replaceMulti(duration: TimeInterval = 0.3) -> ReplaceMulti {
+        return { (listView, removed, inserted, completion) in
+            inserted.forEach{ $0.alpha = 0 }
             UIView.animate(withDuration: duration, animations: {
                 listView.layoutIfNeeded()
-                containers.forEach { container in
-                    container.alpha = 1
-                }
-                
-            })
+                removed.forEach{ $0.alpha = 0 }
+                inserted.forEach{ $0.alpha = 1 }
+            }, completion: { _ in completion() })
         }
     }
     
-    public static func removeOne(duration: TimeInterval = 0.3) -> (XListView, UIView, @escaping () -> Void) -> Void {
-        return { listView, container, completion in
-            listView.sendSubview(toBack: container)
-            UIView.animate(withDuration: duration, animations: {
-                listView.layoutIfNeeded()
-                container.transform = CGAffineTransform(translationX: 0, y: -container.frame.height/2).scaledBy(x: 1, y: 0.01)
-                container.alpha = 0
-            }, completion: { _ in
-                completion()
-            })
+    public static func removeOne(duration: TimeInterval = 0.3) -> RemoveOne {
+        return { listView, removed, completion in
+            removeMulti(duration: duration)(listView, [removed], completion)
         }
     }
     
-    public static func removeMulti(duration: TimeInterval = 0.3) -> (XListView, [UIView], @escaping () -> Void) -> Void {
-        return { (listView, containers, completion) in
+    public static func removeMulti(duration: TimeInterval = 0.3) -> RemoveMulti {
+        return { (listView, removed, completion) in
+            removed.forEach{ listView.sendSubview(toBack: $0) }
             UIView.animate(withDuration: duration, animations: {
                 listView.layoutIfNeeded()
-                containers.forEach({ container in
-                    container.transform = CGAffineTransform(translationX: 0, y: -container.frame.height/2).scaledBy(x: 1, y: 0.01)
-                    container.alpha = 0
+                removed.forEach({ view in
+                    view.transform = CGAffineTransform(translationX: 0, y: -view.frame.height/2).scaledBy(x: 1, y: 0.01)
+                    view.alpha = 0
                 })
-            }, completion: { _ in
-                completion()
+            }, completion: { _ in completion() })
+        }
+    }
+    
+    public static func moveOne(duration: TimeInterval = 0.6) -> MoveOne {
+        return { listView, view, from, to in
+            listView.bringSubview(toFront: view)
+            UIView.animate(withDuration: duration, animations: {
+                listView.layoutIfNeeded()
             })
         }
     }
     
-    public static func replaceOne(duration: TimeInterval = 0.3) -> (XListView, UIView, UIView, @escaping () -> Void) -> Void {
-        return { (listView, old, current, completion) in
-            current.alpha = 0
+    public static func insertOne(duration: TimeInterval = 0.3) -> InsertOne {
+        return { listView, inserted in
+            inserted.alpha = 0
             UIView.animate(withDuration: duration, animations: {
                 listView.layoutIfNeeded()
-                old.alpha = 0
-                current.alpha = 1
-            }, completion: { _ in completion() })
+                inserted.alpha = 1
+            })
         }
     }
     
-    public static func replaceMulti(duration: TimeInterval = 0.3) -> (XListView, UIView, [UIView], @escaping () -> Void) -> Void {
-        return { (listView, old, current, completion) in
-            current.forEach{ $0.alpha = 0 }
+    public static func insertMulti(duration: TimeInterval = 0.3) -> InsertMulti {
+        return { listView, inserted in
+            inserted.forEach { $0.alpha = 0 }
             UIView.animate(withDuration: duration, animations: {
                 listView.layoutIfNeeded()
-                old.alpha = 0
-                current.forEach{ $0.alpha = 1 }
-            }, completion: { _ in completion() })
-        }
-    }
-    
-    
-    public static func move(duration: TimeInterval = 0.6) -> (XListView, UIView, CGRect, CGRect) -> Void {
-        return { listView, container, from, to in
-            listView.bringSubview(toFront: container)
-            UIView.animate(withDuration: duration, animations: {
-                listView.layoutIfNeeded()
+                inserted.forEach { $0.alpha = 1 }
             })
         }
     }
 }
 
 extension Animations {
-    public static func addOneFromLeft(duration: TimeInterval = 0.3) -> (XListView, UIView) -> Void {
-        return { listView, container in
-            container.transform = CGAffineTransform(translationX: -container.frame.width, y: 0)
+    public static func insertOneFromLeft(duration: TimeInterval = 0.3) -> InsertOne {
+        return { listView, inserted in
+            inserted.transform = CGAffineTransform(translationX: -inserted.frame.width, y: 0)
             UIView.animate(withDuration: duration, animations: {
                 listView.layoutIfNeeded()
-                container.transform = .identity
+                inserted.transform = .identity
             })
         }
     }
     
-    public static func replaceOneFromLeft(duration: TimeInterval = 0.3) -> (XListView, UIView, UIView, @escaping () -> Void) -> Void {
-        return { (listView, old, current, completion) in
-            current.transform = CGAffineTransform(translationX: -current.frame.width, y: 0)
+    public static func replaceOneFromLeft(duration: TimeInterval = 0.3) -> ReplaceOne {
+        return { (listView, removed, inserted, completion) in
+            inserted.transform = CGAffineTransform(translationX: -inserted.frame.width, y: 0)
             UIView.animate(withDuration: duration, animations: {
                 listView.layoutIfNeeded()
-                old.transform = CGAffineTransform(translationX: old.frame.width, y: 0)
-                current.transform = .identity
+                removed.transform = CGAffineTransform(translationX: removed.frame.width, y: 0)
+                inserted.transform = .identity
             }, completion: { _ in completion() })
         }
     }
     
-    public static func moveOutInFromLeft(duration: TimeInterval = 0.6) -> (XListView, UIView, CGRect, CGRect) -> Void {
-        return { listView, container, from, to in
+    public static func moveOneOutInFromLeft(duration: TimeInterval = 0.6) -> MoveOne {
+        return { listView, view, from, to in
             UIView.animateKeyframes(withDuration: duration, delay: 0, options: [.beginFromCurrentState], animations: {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
                     listView.layoutIfNeeded()
-                    container.frame = from
+                    view.frame = from
                 })
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5, animations: {
-                    container.frame = from.offsetBy(dx: -from.width, dy: 0)
+                    view.frame = from.offsetBy(dx: -from.width, dy: 0)
                 })
                 UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0, animations: {
-                    container.frame = to.offsetBy(dx: -to.width, dy: 0)
+                    view.frame = to.offsetBy(dx: -to.width, dy: 0)
                 })
                 UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5, animations: {
-                    container.frame = to
+                    view.frame = to
                 })
             }, completion: nil)
         }
