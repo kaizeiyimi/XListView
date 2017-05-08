@@ -47,24 +47,26 @@ class ViewController: UIViewController {
                 
                 let inner: UIView
                 if Int(height) % 2 == 0 {
-                    inner = TouchFeedbackView(frame: CGRect(x: 5, y: 5, width: 120, height: 40))
+                    let feedbackView = TouchFeedbackView(frame: CGRect(x: 5, y: 5, width: 120, height: 40))
+                    feedbackView.onStateChange = {[weak feedbackView] in
+                        feedbackView?.setStateUsingMaskBoard()($0)
+                    }
                     let label = UILabel()
                     label.translatesAutoresizingMaskIntoConstraints = false
-                    (inner as! TouchFeedbackView).contentView.addSubview(label)
+                    feedbackView.contentView.addSubview(label)
                     label.text = "inner feedback"
                     label.textAlignment = .center
-                    
-                    label.isUserInteractionEnabled = true
-                    let tap = UITapGestureRecognizer()
-                    _ = tap.rx.event.subscribe(onNext: {[weak constraint, weak box] in
-                        if let constraint = constraint, $0.state == .ended {
+
+                    feedbackView.onTap = {[weak constraint, weak box] in
+                        if let constraint = constraint {
                             constraint.constant = constraint.constant > 75 ? constraint.constant - 25 : constraint.constant + 25
                             UIView.animate(withDuration: 0.25, animations: {
                                 box?.superview?.superview?.layoutIfNeeded()
                             })
                         }
-                    })
-                    label.addGestureRecognizer(tap)
+                    }
+                    
+                    inner = feedbackView
                     
                     NSLayoutConstraint.activate(
                         NSLayoutConstraint.constraints(withVisualFormat: "H:|[label]|",
