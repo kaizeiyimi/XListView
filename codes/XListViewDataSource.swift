@@ -7,28 +7,24 @@
 
 import UIKit
 
+// MARK: - XListViewDataSourceItem
 
 public protocol XListViewDataSourceItem {
-    var xListViewManagedItemIdentifier: String? { get }
-    func makeXListViewManagedItem() -> XListView.ManagedItem
+    var xListViewIdentifier: String? { get }
+    func makeXListManagedView() -> UIView
 }
 
 extension XListViewDataSourceItem {
-    public var xListViewManagedItemIdentifier: String? { return nil }
+    public var xListViewIdentifier: String? { return nil }
 }
 
 extension UIView: XListViewDataSourceItem {
-    public func makeXListViewManagedItem() -> XListView.ManagedItem {
-        return XListView.ManagedItem(view: self)
-    }
-}
-
-extension XListView.ManagedItem: XListViewDataSourceItem {
-    public func makeXListViewManagedItem() -> XListView.ManagedItem {
+    public func makeXListManagedView() -> UIView {
         return self
     }
 }
 
+// MARK: - XListViewDataSource
 
 public protocol XListViewDataSourceUpdating: class {
     associatedtype Item
@@ -55,134 +51,84 @@ public class XListViewPlainDataSource: XListViewDataSourceUpdating {
     public init(){}
 }
 
-private var identifierKey = "kaize.yimi.XXListView.identifier.key"
-extension XListView.ContainerView {
-    var identifier: String? {
+
+// MARK: - XListViewDataSourceUpdating
+
+private var identifierKey = "kaize.yimi.XXListView.identifierKey.key"
+extension UIView {
+    fileprivate var identifier: String? {
         get { return objc_getAssociatedObject(self, &identifierKey) as? String }
-        set { objc_setAssociatedObject(self, &identifierKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+        set { objc_setAssociatedObject(self, &identifierKey, newValue, .OBJC_ASSOCIATION_COPY_NONATOMIC) }
+    }
+}
+
+
+extension XListViewDataSourceItem {
+    fileprivate func makeManagedView() -> UIView {
+        let view = makeXListManagedView()
+        view.identifier = xListViewIdentifier
+        return view
     }
 }
 
 extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
-    
-    public func getViewBy(identifier: String?) -> UIView? {
+    public func view(by identifier: String?) -> UIView? {
         guard let identifier = identifier else { return nil }
-        return listView.managedContainers.filter{ $0.identifier == identifier }.first?.view
+        return listView.managedViews.first{ $0.identifier == identifier }
     }
-    
-    public func reset(_ items: [Item] = []) {
+
+    public func reset(items: [Item] = []) {
         self.items = items
-        listView.reset(items.map{ $0.makeXListViewManagedItem() })
+        listView.reset(views: items.map{ $0.makeManagedView() })
     }
     
-    public func insert(_ items: [Item], at index: Int,
-                       animations: ((XListView, [UIView]) -> Void)? = Animations.addMulti()) {
-        guard items.flatMap({ getViewBy(identifier: $0.xListViewManagedItemIdentifier) }).count == 0 else {
-            assertionFailure("every item must has unique identifier!")
-            return
-        }
+    public func replace(items: [Item], in range: Range<Int>, animations: Animations.ReplaceMulti? = Animations.replaceMulti()) {
+        self.items.replaceSubrange(range, with: items)
+        listView.replace(views: items.map{ $0.makeManagedView() }, in: range, animations: animations)
+    }
+    
+    public func remove(indexes: [Int], animations: Animations.RemoveMulti? = Animations.removeMulti()) {
+        items = items.enumerated().filter{ !indexes.contains($0.offset) }.map{ $0.element }
+        listView.remove(indexes: indexes, animations: animations)
+    }
+    
+    public func move(from: Int, to: Int, animations: Animations.MoveOne? = Animations.moveOne()) {
+        items.insert(items.remove(at: from), at: to)
+        listView.move(from: from, to: to, animations: animations)
+    }
+}
+
+extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
+
+    public func insert(items: [Item], at index: Int, animations: Animations.InsertMulti? = Animations.insertMulti()) {
         self.items.insert(contentsOf: items, at: index)
-        listView.insertManagedItems(items.map{ $0.makeXListViewManagedItem() }, at: index, animations: animations)
-        items.enumerated().forEach { ( offset, item) in
-            listView.managedContainers[index + offset].identifier = item.xListViewManagedItemIdentifier
-        }
+        listView.insert(views: items.map{ $0.makeManagedView() }, at: index, animations: animations)
     }
     
-    public func insert(_ item: Item, at index: Int,
-                       animations: ((XListView, UIView) -> Void)? = Animations.addOne()) {
-        guard getViewBy(identifier: item.xListViewManagedItemIdentifier) == nil else {
-            assertionFailure("every item must has unique identifier!")
-            return
-        }
-        items.insert(item, at: index)
-        listView.insertManagedItem(item.makeXListViewManagedItem(), at: index, animations: animations)
-        listView.managedContainers[index].identifier = item.xListViewManagedItemIdentifier
+    public func insert(item: Item, at index: Int, animations: Animations.InsertOne? = Animations.insertOne()) {
+        self.items.insert(item, at: index)
+        listView.insert(view: item.makeManagedView(), at: index, animations: animations)
     }
     
-    public func remove(at index: Int,
-                       animations: ((XListView, UIView, @escaping () -> Void) -> Void)? = Animations.removeOne()) {
-        let view = listView.managedContainers[index].view
-        items.remove(at: index)
-        listView.removeManagedView(view, animations: animations)
+    public func append(items: [Item], animations: Animations.InsertMulti? = Animations.insertMulti()) {
+        insert(items: items, at: self.items.count, animations: animations)
     }
     
-    public func remove(_ indexes: [Int],
-                       animations: ((XListView, [UIView], @escaping () -> Void) -> Void)? = Animations.removeMulti()) {
-        let views = indexes.flatMap{ listView.managedContainers[$0].view }
-        Array(Set(indexes)).sorted(by: >).forEach{ items.remove(at: $0) }
-        listView.removeManagedViews(views, animations: animations)
+    public func append(item: Item, animations: Animations.InsertOne? = Animations.insertOne()) {
+        insert(item: item, at: items.count, animations: animations)
     }
     
-    public func move(fromIndex from: Int, to: Int,
-                     animations: ((XListView, UIView, CGRect, CGRect) -> Void)? = Animations.move()) {
-        let view = listView.managedContainers[from].view
-        let item = items.remove(at: from)
-        items.insert(item, at: to)
-        listView.moveManagedView(view, to: to, animations: animations)
+    public func replace(items: [Item], at index: Int, animations: Animations.ReplaceMulti? = Animations.replaceMulti()) {
+        replace(items: items, in: index..<index+1, animations: animations)
     }
     
-    public func replace(_ item: Item, at index: Int,
-                        animations: ((XListView, UIView, UIView, @escaping () -> Void) -> Void)? = Animations.replaceOne()) {
-        items[index] = item
-        listView.replaceManagedItem(item.makeXListViewManagedItem(), at: index, animations: animations)
-        listView.managedContainers[index].identifier = item.xListViewManagedItemIdentifier
+    public func replace(item: Item, at index: Int, animations: Animations.ReplaceOne? = Animations.replaceOne()) {
+        items.replaceSubrange(index...index, with: [item])
+        listView.replace(view: item.makeManagedView(), at: index, animations: animations)
     }
     
-    public func replace(_ items: [Item], at index: Int,
-                        animations: ((XListView, UIView, [UIView], @escaping () -> Void) -> Void)? = Animations.replaceMulti()) {
-        self.items.replaceSubrange(index..<index+1, with: items)
-        listView.replaceManagedItems(items.map({ $0.makeXListViewManagedItem() }), at: index, animations: animations)
-        items.enumerated().forEach { ( offset, item) in
-            listView.managedContainers[index + offset].identifier = item.xListViewManagedItemIdentifier
-        }
-    }
-    
-}
-
-extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
-    
-    public func append(_ items: [Item],
-                       animations: ((XListView, [UIView]) -> Void)? = Animations.addMulti()) {
-        insert(items, at: items.count, animations: animations)
-    }
-    
-    public func append(_ item: Item,
-                       animations: ((XListView, UIView) -> Void)? = Animations.addOne()) {
-        insert(item, at: items.count, animations: animations)
-    }
-    
-    public func removeFirst(where: (Item) -> Bool,
-                            animations: ((XListView, UIView, @escaping () -> Void) -> Void)? = Animations.removeOne()) {
-        guard let index = items.index(where: `where`) else { return }
-        remove(at: index, animations: animations)
-    }
-    
-    public func removeLast(where: (Item) -> Bool,
-                           animations: ((XListView, UIView, @escaping () -> Void) -> Void)? = Animations.removeOne()) {
-        guard let index = items.reversed().index(where: `where`)?.base else { return }
-        remove(at: index, animations: animations)
-    }
-}
-
-extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
-    
-    public func remove(identifier: String?,
-                       animations: ((XListView, UIView, @escaping () -> Void) -> Void)? = Animations.removeOne()) {
-        guard let identifier = identifier else { return }
-        guard let index = listView.managedContainers.index(where: { $0.identifier == identifier }) else { return }
-        remove(at: index, animations: animations)
-    }
-    
-    public func remove(identifiers: [String?],
-                       animations: ((XListView, [UIView], @escaping () -> Void) -> Void)? = Animations.removeMulti()) {
-        let indexes = identifiers.flatMap{ $0 }.flatMap{ id in listView.managedContainers.index{ $0.identifier == id } }
-        remove(indexes, animations: animations)
-    }
-    
-    public func move(identifier: String?, to: Int,
-                     animations: ((XListView, UIView, CGRect, CGRect) -> Void)? = Animations.move()) {
-        guard let identifier = identifier,
-            let index = listView.managedContainers.index(where: {$0.identifier == identifier}) else { return }
-        move(fromIndex: index, to: to, animations: animations)
+    public func remove(at: Int, animations: Animations.RemoveOne? = Animations.removeOne()) {
+        items.remove(at: at)
+        listView.remove(at: at, animations: animations)
     }
 }

@@ -9,18 +9,23 @@ import UIKit
 
 public class TouchFeedbackView: UIView {
     
+    public enum State {
+        case active
+        case recognized
+        case cancelled
+    }
+    
     public let contentView = UIView()
+    public var isFeedbackEnabled = true
     
     public var onTap: () -> Void = {}
-    public lazy var setActive: (_ isActive: Bool, _ animated: Bool) -> Void = {
-        return { [weak self] isActive, animated in
-            self?.setActiveUsingUITableViewCellStyle(isActive: isActive, animated: animated)
-        }
+    public lazy var onStateChange: (_ state: State) -> Void = {
+        return {[weak self] in self?.setStateUsingUITableViewCellStyle()($0) }
     }()
     
     private var beginTouch: UITouch?
     
-    private let delay = 0.025
+    private let delay = 0.02
     private var timer: DispatchSourceTimer?
     
     private weak var maskBoard: UIView?
@@ -53,7 +58,7 @@ public class TouchFeedbackView: UIView {
         timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
         timer?.setEventHandler {[weak self] in
             self?.resetTimer()
-            self?.setActive(true, true)
+            self?.setState(.active)
         }
         timer?.scheduleOneshot(deadline: DispatchTime.now() + delay)
         timer?.resume()
@@ -67,7 +72,7 @@ public class TouchFeedbackView: UIView {
         if beginTouch.location(in: self).y != touch.location(in: self).y {
             resetTimer()
             self.beginTouch = nil
-            setActive(false, false)
+            setState(.cancelled)
         }
     }
     
@@ -76,14 +81,14 @@ public class TouchFeedbackView: UIView {
         beginTouch = nil
         resetTimer()
         onTap()
-        setActive(false, true)
+        setState(.recognized)
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard beginTouch != nil else { return }
         resetTimer()
         beginTouch = nil
-        setActive(false, false)
+        setState(.cancelled)
     }
     
     private func resetTimer() {
@@ -91,73 +96,113 @@ public class TouchFeedbackView: UIView {
         timer = nil
     }
     
-    public func setActiveUsingMaskBoard(color: UIColor = UIColor.white.withAlphaComponent(0.4),
-                                        isActive: Bool,
-                                        animated: Bool) {
-        if isActive {
-            guard self.maskBoard == nil else { return }
-            let maskBoard = UIView(frame: bounds)
-            maskBoard.isUserInteractionEnabled = false
-            maskBoard.backgroundColor = color
-            maskBoard.alpha = 0
-            addSubview(maskBoard)
-            UIView.animate(withDuration: animated ? 0.25 : 0, animations: {
-                maskBoard.alpha = 1
-            })
-            self.maskBoard = maskBoard
-        } else {
-            guard let maskBoard = maskBoard else { return }
-            UIView.animate(withDuration: animated ? 0.25 : 0, animations: {
-                maskBoard.alpha = 0
-            }, completion: { _ in
-                maskBoard.removeFromSuperview()
-            })
+    private func setState(_ state: State) {
+        onStateChange(isFeedbackEnabled ? state : .cancelled)
+    }
+    
+    public func setStateUsingMaskBoard(color: UIColor = UIColor.white.withAlphaComponent(0.4)) -> (State) -> Void {
+        return {[weak self] state in
+            guard let `self` = self else { return }
+            
+            func attachMaskBoard() -> UIView {
+                let maskBoard = UIView(frame: self.bounds)
+                maskBoard.isUserInteractionEnabled = false
+                maskBoard.backgroundColor = color
+                self.addSubview(maskBoard)
+                return maskBoard
+            }
+            
+            switch state {
+            case .active:
+                guard self.maskBoard == nil else { return }
+                self.maskBoard = attachMaskBoard()
+                self.maskBoard?.alpha = 0
+                UIView.animate(withDuration: 0.25, animations: {
+                    self.maskBoard?.alpha = 1
+                })
+            
+            case .recognized:
+                if self.maskBoard == nil {
+                    self.maskBoard = attachMaskBoard()
+                }
+                self.maskBoard?.alpha = 1
+                UIView.animate(withDuration: 0.25, animations: {
+                    self.maskBoard?.alpha = 0
+                }, completion: {_ in
+                    self.maskBoard?.removeFromSuperview()
+                })
+                
+            case .cancelled:
+                self.maskBoard?.removeFromSuperview()
+            }
         }
     }
     
-    public func setActiveUsingUITableViewCellStyle(color: UIColor = UIColor(white: CGFloat(0xd9)/255, alpha: 1),
-                                                   isActive: Bool,
-                                                   animated: Bool) {
-        if isActive {
-            guard self.colors == nil else { return }
-            var colors: [UIView: UIColor] = [:]
-            var views = subviews
-            while !views.isEmpty {
-                let current = views.removeFirst()
-                views.append(contentsOf: current.subviews)
-                colors[current] = current.backgroundColor
-                current.backgroundColor = UIColor.clear
+    public func setStateUsingUITableViewCellStyle(color: UIColor = UIColor(white: CGFloat(0xd9)/255, alpha: 1)) -> (State) -> Void {
+        return {[weak self] state in
+            guard let `self` = self else { return }
+            guard self.isFeedbackEnabled else {
+                
+                return
             }
             
-            let view = UIView(frame: bounds)
-            view.isUserInteractionEnabled = false
-            view.backgroundColor = color
-            insertSubview(view, at: 0)
-            view.alpha = 0
-            UIView.animate(withDuration: 0, animations: {
-                view.alpha = 1
-            })
+            func attachSelectedBackgroundView() -> UIView {
+                let view = UIView(frame: self.bounds)
+                view.isUserInteractionEnabled = false
+                view.backgroundColor = color
+                self.insertSubview(view, at: 0)
+                return view
+            }
             
-            self.colors = colors
-            self.selectedBackgroundView = view
+            func saveColors() -> [UIView: UIColor] {
+                var colors: [UIView: UIColor] = [:]
+                var views = self.subviews
+                while !views.isEmpty {
+                    let current = views.removeFirst()
+                    views.append(contentsOf: current.subviews)
+                    colors[current] = current.backgroundColor
+                    current.backgroundColor = .clear
+                }
+                return colors
+            }
             
-        } else {
-            guard let colors = self.colors else { return }
-            var views = subviews
-            while !views.isEmpty {
-                let current = views.removeFirst()
-                views.append(contentsOf: current.subviews)
-                if let color = colors[current] {
-                    current.backgroundColor = color
+            func restoreColors(_ colors: [UIView: UIColor]?) {
+                guard let colors = colors, !colors.isEmpty else { return }
+                var views = self.subviews
+                while !views.isEmpty {
+                    let current = views.removeFirst()
+                    views.append(contentsOf: current.subviews)
+                    if let color = colors[current] {
+                        current.backgroundColor = color
+                    }
                 }
             }
             
-            UIView.animate(withDuration: animated ? 0.25 : 0, animations: {
-                self.selectedBackgroundView?.alpha = 0
-            }, completion: { _ in
+            switch state {
+            case .active:
+                guard self.colors == nil else { return }
+                self.colors = saveColors()
+                self.selectedBackgroundView = attachSelectedBackgroundView()
+                
+            case .recognized:
+                restoreColors(self.colors)
+                if self.selectedBackgroundView == nil {
+                    self.selectedBackgroundView = attachSelectedBackgroundView()
+                }
+                
+                UIView.animate(withDuration: 0.25, animations: {
+                    self.selectedBackgroundView?.alpha = 0
+                }, completion: { _ in
+                    self.colors = nil
+                    self.selectedBackgroundView?.removeFromSuperview()
+                })
+                
+            case .cancelled:
+                restoreColors(self.colors)
                 self.colors = nil
                 self.selectedBackgroundView?.removeFromSuperview()
-            })
+            }
+            
         }
     }
     
