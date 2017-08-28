@@ -30,9 +30,13 @@ class ViewController: UIViewController {
     enum PageItem: XListViewDataSourceItem {
         case box(String?, UIColor, () -> Void)
         case template(UIView, UIEdgeInsets)
+        case scrollView(UIScrollView)
         
         func makeXListManagedView() -> UIView {
             switch self {
+            case let .scrollView(scrollView):
+                return scrollView
+                
             case let .template(view, margins):
                 return MarginView().setup(view, margins: margins)
                 
@@ -170,6 +174,95 @@ class ViewController: UIViewController {
             self.navigationController?.pushViewController(vc, animated: true)
         })
     }
+    
+    func makeScrollViewItem() -> PageItem {
+        let scrollView = UIScrollView()
+        scrollView.backgroundColor = .lightGray
+        let width = UIScreen.main.bounds.width
+        
+        let view1 = UIView()
+        view1.backgroundColor = .purple
+        view1.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(view1)
+        
+        let view2 = UIView()
+        view2.backgroundColor = .orange
+        view2.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(view2)
+        
+        let views = ["v1": view1, "v2": view2]
+        
+        NSLayoutConstraint.activate(
+            NSLayoutConstraint.constraints(withVisualFormat: "H:|[v1(\(width))]|", options: [], metrics: nil, views: views)
+        )
+        NSLayoutConstraint.activate(
+            NSLayoutConstraint.constraints(withVisualFormat: "H:|[v2(\(width))]|", options: [], metrics: nil, views: views)
+        )
+        NSLayoutConstraint.activate(
+            NSLayoutConstraint.constraints(withVisualFormat: "V:|-10-[v1(\(500))]-10-[v2(\(500))]-10-|", options: [], metrics: nil, views: views)
+        )
+        
+        return .scrollView(scrollView)
+    }
+    
+    func makeTableViewItem() -> PageItem {
+        class Cell: UITableViewCell {
+            override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+                super.init(style: style, reuseIdentifier: reuseIdentifier)
+                
+                let label = UILabel()
+                label.text = "test"
+                label.translatesAutoresizingMaskIntoConstraints = false
+                contentView.addSubview(label)
+                let views = ["v": label]
+                NSLayoutConstraint.activate(
+                    NSLayoutConstraint.constraints(withVisualFormat: "H:|-16-[v]", options: [], metrics: nil, views: views)
+                )
+                NSLayoutConstraint.activate(
+                    NSLayoutConstraint.constraints(withVisualFormat: "V:|-16-[v]-16-|", options: [], metrics: nil, views: views)
+                )
+            }
+            
+            required init?(coder aDecoder: NSCoder) {
+                fatalError("init(coder:) has not been implemented")
+            }
+        }
+        
+        class DataSource: NSObject, UITableViewDataSource, UITableViewDelegate {
+            func numberOfSections(in tableView: UITableView) -> Int {
+                return 3
+            }
+            
+            func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+                return 6
+            }
+            
+            func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+                return tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+            }
+            
+            func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+                return "hehe"
+            }
+        }
+        
+        let tableView = UITableView()
+        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.register(Cell.self, forCellReuseIdentifier: "cell")
+        
+        // in this embed mode, headerView or footerView is not encouraged.
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        headerView.backgroundColor = .orange
+        tableView.tableHeaderView = headerView
+        
+        
+        let dataSource = DataSource()
+        tableView.dataSource = dataSource
+        tableView.delegate = dataSource
+        objc_setAssociatedObject(tableView, "", dataSource, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
+        return .scrollView(tableView)
+    }
 
     @IBAction func addBox(_ sender: Any) {
         if dataSource.items.count >= 4 {
@@ -179,7 +272,11 @@ class ViewController: UIViewController {
         
         let index = Int(arc4random() % UInt32(dataSource.items.count + 1))
         
-        dataSource.insert(item: makeBoxItem(), at: index, animations: Animations.insertOneFromLeft())
+//        if index == 3 {
+            dataSource.insert(item: makeTableViewItem(), at: index, animations: Animations.insertOneFromLeft())
+//        } else {
+//            dataSource.insert(item: makeBoxItem(), at: index, animations: Animations.insertOneFromLeft())
+//        }
     }
     
     func replace() {

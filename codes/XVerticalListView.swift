@@ -51,6 +51,48 @@ open class XVerticalListView: XListView {
         NSLayoutConstraint(item: view, attribute: .leading, relatedBy: .equal, toItem: head, attribute: .leading, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: view, attribute: .trailing, relatedBy: .equal, toItem: head, attribute: .trailing, multiplier: 1, constant: 0).isActive = true
         spaces[view] = (nil, nil)
+        
+        // scrollview
+        if let scrollView = view as? UIScrollView {
+            let height = NSLayoutConstraint(item: scrollView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 0)
+            height.isActive = true
+            
+            observeForScrollView(scrollView, onChange: {[weak height] (container, scrollView) in
+                let maxHeight = scrollView.contentInset.top + scrollView.contentSize.height + scrollView.contentInset.bottom
+                let containerHeight = container.bounds.height
+                if maxHeight <= containerHeight {
+                    if height?.constant != maxHeight {
+                        height?.constant = maxHeight
+                    }
+                    if container.spaces[scrollView]?.next?.constant != 0 {
+                        container.spaces[scrollView]?.next?.constant = 0
+                    }
+                } else {
+                    if height?.constant != containerHeight {
+                        height?.constant = containerHeight
+                    }
+                    if container.spaces[scrollView]?.next?.constant != containerHeight - maxHeight {
+                        container.spaces[scrollView]?.next?.constant = containerHeight - maxHeight
+                    }
+                    let top = scrollView.frame.minY  - scrollView.transform.ty
+                    let offsetY = container.contentOffset.y
+                    if offsetY <= top {
+                        scrollView.setContentOffset(CGPoint(x: 0, y: -scrollView.contentInset.top), animated: false)
+                        scrollView.transform = .identity
+                    } else {
+                        let metric = min(offsetY - top, maxHeight - containerHeight)
+                        if metric != scrollView.transform.ty {
+                            scrollView.setContentOffset(CGPoint(x: 0, y: -scrollView.contentInset.top + metric), animated: false)
+                            scrollView.transform = CGAffineTransform(translationX: 0, y: metric)
+                        }
+                    }
+                }
+            })
+            
+            scrollView.isScrollEnabled = false
+            scrollView.layoutIfNeeded()
+        }
+        
         return view
     }
     
@@ -109,6 +151,8 @@ open class XVerticalListView: XListView {
             self.adjustingInsetsBottom = 0
         }
     }
+    
+    
 }
 
 

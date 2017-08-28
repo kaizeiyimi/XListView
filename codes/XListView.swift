@@ -8,6 +8,8 @@
 import UIKit
 
 
+internal var KVOObserverKey = "yimi.kaizei.XListView.Observer.key"
+
 /// abstract super class. use Vertical or Horizontal listView.
 open class XListView: UIScrollView {
     
@@ -45,6 +47,44 @@ open class XListView: UIScrollView {
         fatalError("not for directly use! use Vertical or Horizontal listView!")
     }
     
+    internal func removeManagedView(_ view: UIView) {
+        if let scrollView = view as? UIScrollView,
+            let observer = objc_getAssociatedObject(view, &KVOObserverKey) as? NSObject {
+            scrollView.removeObserver(observer, forKeyPath: "contentSize")
+            scrollView.removeObserver(observer, forKeyPath: "contentInset")
+            self.removeObserver(observer, forKeyPath: "bounds")
+        }
+        view.removeFromSuperview()
+    }
+    
+    internal func observeForScrollView(
+        _ scrollView: UIScrollView,
+        onChange: @escaping (_ container: XListView, _ scrollView: UIScrollView) -> Void) {
+        class Observer: NSObject {
+            weak var container: XListView?
+            weak var scrollView: UIScrollView?
+            let onChange: (XListView, UIScrollView) -> Void
+            
+            init(container: XListView, scrollView: UIScrollView,
+                 onChange: @escaping (XListView, UIScrollView) -> Void) {
+                (self.container, self.scrollView) = (container, scrollView)
+                self.onChange = onChange
+            }
+            
+            override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+                guard let container = container, let scrollView = scrollView else { return }
+                onChange(container, scrollView)
+            }
+        }
+        
+        let observer = Observer(container: self, scrollView: scrollView, onChange: onChange)
+        scrollView.addObserver(observer, forKeyPath: "contentSize", options: [.initial, .new], context: nil)
+        scrollView.addObserver(observer, forKeyPath: "contentInset", options: [.initial, .new], context: nil)
+        self.addObserver(observer, forKeyPath: "bounds", options: [.initial, .new], context: nil)
+        
+        objc_setAssociatedObject(scrollView, &KVOObserverKey, observer, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+    
     // MARK: - managements
     
     public func replace(views: [UIView], in range: Range<Int>, animations: Animations.ReplaceMulti? = Animations.replaceMulti()) {
@@ -71,7 +111,7 @@ open class XListView: UIScrollView {
             }
             
             animations(self, removed, inserted) {
-                removed.forEach { $0.removeFromSuperview() }
+                removed.forEach { self.removeManagedView($0) }
             }
         }
     }
@@ -108,10 +148,10 @@ open class XListView: UIScrollView {
         if let animations = animations {
             removed.forEach { $0.translatesAutoresizingMaskIntoConstraints = true }
             animations(self, removed) {
-                removed.forEach { $0.removeFromSuperview() }
+                removed.forEach { self.removeManagedView($0) }
             }
         } else {
-            removed.forEach { $0.removeFromSuperview() }
+            removed.forEach { self.removeManagedView($0) }
         }
     }
     
