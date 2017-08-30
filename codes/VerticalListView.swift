@@ -1,5 +1,5 @@
 //
-//  XVerticalListView.swift
+//  VerticalListView.swift
 //
 //  Created by kaizei on 2017/4/26.
 //  Copyright © 2017年 kaizei. All rights reserved.
@@ -8,7 +8,7 @@
 import UIKit
 
 
-open class XVerticalListView: XListView {
+open class VerticalListView: ListView {
     
     private var adjustingInsetsBottom: CGFloat = 0
     
@@ -151,8 +151,6 @@ open class XVerticalListView: XListView {
             self.adjustingInsetsBottom = 0
         }
     }
-    
-    
 }
 
 

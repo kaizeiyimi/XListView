@@ -27,7 +27,7 @@ class ViewController: UIViewController {
         }
     }
     
-    enum PageItem: XListViewDataSourceItem {
+    enum PageItem: ListViewDataSourceItem {
         case box(String?, UIColor, () -> Void)
         case template(UIView, UIEdgeInsets)
         case scrollView(UIScrollView)
@@ -57,7 +57,7 @@ class ViewController: UIViewController {
                     }
                     let label = UILabel()
                     label.translatesAutoresizingMaskIntoConstraints = false
-                    feedbackView.contentView.addSubview(label)
+                    feedbackView.addSubview(label)
                     label.text = "inner feedback"
                     label.textAlignment = .center
 
@@ -89,18 +89,18 @@ class ViewController: UIViewController {
                 }
                 inner.layer.borderWidth = 1
                 inner.backgroundColor = .orange
-                box.contentView.addSubview(inner)
+                box.addSubview(inner)
                 
                 if Int(height) % 3 == 0 {
                     box.onStateChange = {[weak box] in box?.setStateUsingMaskBoard()($0) }
                     let input = UITextField()
                     input.translatesAutoresizingMaskIntoConstraints = false
-                    box.contentView.addSubview(input)
+                    box.addSubview(input)
                     input.text = "mask style"
                     
                     let input2 = UITextField()
                     input2.translatesAutoresizingMaskIntoConstraints = false
-                    box.contentView.addSubview(input2)
+                    box.addSubview(input2)
                     input2.text = "input2"
                     
                     NSLayoutConstraint.activate(
@@ -126,9 +126,9 @@ class ViewController: UIViewController {
         
     }
 
-    @IBOutlet weak var listView: XListView!
+    @IBOutlet weak var listView: ListView!
     
-    let dataSource = XListViewDataSource<PageItem>()
+    let dataSource = ListViewDataSource<PageItem>()
     
     override func viewDidLoad() {
         super.viewDidLoad()

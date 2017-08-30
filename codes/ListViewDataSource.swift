@@ -1,5 +1,5 @@
 //
-//  XListViewDataSource.swift
+//  ListViewDataSource.swift
 //
 //  Created by kaizei on 2017/4/27.
 //  Copyright © 2017年 kaizei. All rights reserved.
@@ -7,18 +7,18 @@
 
 import UIKit
 
-// MARK: - XListViewDataSourceItem
+// MARK: - ListViewDataSourceItem
 
-public protocol XListViewDataSourceItem {
+public protocol ListViewDataSourceItem {
     var xListViewIdentifier: String? { get }
     func makeXListManagedView() -> UIView
 }
 
-extension XListViewDataSourceItem {
+extension ListViewDataSourceItem {
     public var xListViewIdentifier: String? { return nil }
 }
 
-extension UIView: XListViewDataSourceItem {
+extension UIView: ListViewDataSourceItem {
     public func makeXListManagedView() -> UIView {
         return self
     }
@@ -26,35 +26,37 @@ extension UIView: XListViewDataSourceItem {
 
 // MARK: - XListViewDataSource
 
-public protocol XListViewDataSourceUpdating: class {
+public protocol ListViewDataSourceUpdating: class {
     associatedtype Item
     
-    var listView: XListView! { get }
+    var listView: ListView! { get }
     var items: [Item] { get set }
 }
 
-public class XListViewDataSource<Item>: XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
+public class ListViewDataSource<Item>: ListViewDataSourceUpdating where Item: ListViewDataSourceItem {
     
-    public var listView: XListView!
+    public var listView: ListView!
     public var items: [Item] = []
     
     public init(){}
+    public init(_ listView: ListView){ self.listView = listView }
 }
 
-public class XListViewPlainDataSource: XListViewDataSourceUpdating {
+public class ListViewPlainDataSource: ListViewDataSourceUpdating {
     
-    public typealias Item = XListViewDataSourceItem
+    public typealias Item = ListViewDataSourceItem
     
-    public var listView: XListView!
+    public var listView: ListView!
     public var items: [Item] = []
     
     public init(){}
+    public init(_ listView: ListView){ self.listView = listView }
 }
 
 
-// MARK: - XListViewDataSourceUpdating
+// MARK: - ListViewDataSourceUpdating
 
-private var identifierKey = "kaize.yimi.XXListView.identifierKey.key"
+private var identifierKey = "kaize.yimi.XListView.identifierKey.key"
 extension UIView {
     fileprivate var identifier: String? {
         get { return objc_getAssociatedObject(self, &identifierKey) as? String }
@@ -63,7 +65,7 @@ extension UIView {
 }
 
 
-extension XListViewDataSourceItem {
+extension ListViewDataSourceItem {
     fileprivate func makeManagedView() -> UIView {
         let view = makeXListManagedView()
         view.identifier = xListViewIdentifier
@@ -71,7 +73,7 @@ extension XListViewDataSourceItem {
     }
 }
 
-extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
+extension ListViewDataSourceUpdating {
     public func view(by identifier: String?) -> UIView? {
         guard let identifier = identifier else { return nil }
         return listView.managedViews.first{ $0.identifier == identifier }
@@ -79,12 +81,12 @@ extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
 
     public func reset(items: [Item] = []) {
         self.items = items
-        listView.reset(views: items.map{ $0.makeManagedView() })
+        listView.reset(views: items.map{ ($0 as! ListViewDataSourceItem).makeManagedView() })
     }
     
     public func replace(items: [Item], in range: Range<Int>, animations: Animations.ReplaceMulti? = Animations.replaceMulti()) {
         self.items.replaceSubrange(range, with: items)
-        listView.replace(views: items.map{ $0.makeManagedView() }, in: range, animations: animations)
+        listView.replace(views: items.map{ ($0 as! ListViewDataSourceItem).makeManagedView() }, in: range, animations: animations)
     }
     
     public func remove(indexes: [Int], animations: Animations.RemoveMulti? = Animations.removeMulti()) {
@@ -98,16 +100,16 @@ extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
     }
 }
 
-extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
+extension ListViewDataSourceUpdating {
 
     public func insert(items: [Item], at index: Int, animations: Animations.InsertMulti? = Animations.insertMulti()) {
         self.items.insert(contentsOf: items, at: index)
-        listView.insert(views: items.map{ $0.makeManagedView() }, at: index, animations: animations)
+        listView.insert(views: items.map{ ($0 as! ListViewDataSourceItem).makeManagedView() }, at: index, animations: animations)
     }
     
     public func insert(item: Item, at index: Int, animations: Animations.InsertOne? = Animations.insertOne()) {
         self.items.insert(item, at: index)
-        listView.insert(view: item.makeManagedView(), at: index, animations: animations)
+        listView.insert(view: (item as! ListViewDataSourceItem).makeManagedView(), at: index, animations: animations)
     }
     
     public func append(items: [Item], animations: Animations.InsertMulti? = Animations.insertMulti()) {
@@ -124,7 +126,7 @@ extension XListViewDataSourceUpdating where Item: XListViewDataSourceItem {
     
     public func replace(item: Item, at index: Int, animations: Animations.ReplaceOne? = Animations.replaceOne()) {
         items.replaceSubrange(index...index, with: [item])
-        listView.replace(view: item.makeManagedView(), at: index, animations: animations)
+        listView.replace(view: (item as! ListViewDataSourceItem).makeManagedView(), at: index, animations: animations)
     }
     
     public func remove(at: Int, animations: Animations.RemoveOne? = Animations.removeOne()) {

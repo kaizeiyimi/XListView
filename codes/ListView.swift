@@ -1,5 +1,5 @@
 //
-//  XListView.swift
+//  ListView.swift
 //
 //  Created by kaizei on 2017/4/26.
 //  Copyright © 2017年 kaizei. All rights reserved.
@@ -8,10 +8,10 @@
 import UIKit
 
 
-internal var KVOObserverKey = "yimi.kaizei.XListView.Observer.key"
+private var KVOObserverKey = "yimi.kaizei.ListView.Observer.key"
 
 /// abstract super class. use Vertical or Horizontal listView.
-open class XListView: UIScrollView {
+open class ListView: UIScrollView {
     
     public private(set) var managedViews: [UIView] = []
     
@@ -42,7 +42,7 @@ open class XListView: UIScrollView {
     internal func attachManagedView(_ view: UIView) -> UIView {
         fatalError("not for directly use! use Vertical or Horizontal listView!")
     }
-
+    
     internal func stick(_ a: UIView, _ b: UIView, inner: [UIView] = []) {
         fatalError("not for directly use! use Vertical or Horizontal listView!")
     }
@@ -59,14 +59,14 @@ open class XListView: UIScrollView {
     
     internal func observeForScrollView(
         _ scrollView: UIScrollView,
-        onChange: @escaping (_ container: XListView, _ scrollView: UIScrollView) -> Void) {
+        onChange: @escaping (_ container: ListView, _ scrollView: UIScrollView) -> Void) {
         class Observer: NSObject {
-            weak var container: XListView?
+            weak var container: ListView?
             weak var scrollView: UIScrollView?
-            let onChange: (XListView, UIScrollView) -> Void
+            let onChange: (ListView, UIScrollView) -> Void
             
-            init(container: XListView, scrollView: UIScrollView,
-                 onChange: @escaping (XListView, UIScrollView) -> Void) {
+            init(container: ListView, scrollView: UIScrollView,
+                 onChange: @escaping (ListView, UIScrollView) -> Void) {
                 (self.container, self.scrollView) = (container, scrollView)
                 self.onChange = onChange
             }
@@ -185,14 +185,14 @@ open class XListView: UIScrollView {
     }
 }
 
-extension XListView {
+extension ListView {
     
     // reset
     
     public func reset(views: [UIView]) {
         replace(views: views, in: 0..<managedViews.count, animations: nil)
     }
-
+    
     // insert
     
     public func insert(views: [UIView], at index: Int, animations: Animations.InsertMulti? = Animations.insertMulti()) {
@@ -222,7 +222,7 @@ extension XListView {
         insert(view: view, at: managedViews.count, animations: animations)
     }
     
-    // replace 
+    // replace
     
     public func replace(view: UIView, at index: Int, animations: Animations.ReplaceOne? = Animations.replaceOne()) {
         if let animations = animations {

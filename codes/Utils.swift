@@ -10,16 +10,16 @@ import UIKit
 
 public enum Animations {
     
-    public typealias ReplaceOne = (XListView, _ removed: UIView, _ inserted: UIView, _ completion: @escaping () -> Void) -> Void
-    public typealias ReplaceMulti = (XListView, _ removed: [UIView], _ inserted: [UIView], _ completion: @escaping () -> Void) -> Void
+    public typealias ReplaceOne = (ListView, _ removed: UIView, _ inserted: UIView, _ completion: @escaping () -> Void) -> Void
+    public typealias ReplaceMulti = (ListView, _ removed: [UIView], _ inserted: [UIView], _ completion: @escaping () -> Void) -> Void
     
-    public typealias RemoveOne = (XListView, UIView, _ completion: @escaping () -> Void) -> Void
-    public typealias RemoveMulti = (XListView, [UIView], _ completion: @escaping () -> Void) -> Void
+    public typealias RemoveOne = (ListView, UIView, _ completion: @escaping () -> Void) -> Void
+    public typealias RemoveMulti = (ListView, [UIView], _ completion: @escaping () -> Void) -> Void
     
-    public typealias MoveOne = (XListView, UIView, _ from: CGRect, _ to: CGRect) -> Void
+    public typealias MoveOne = (ListView, UIView, _ from: CGRect, _ to: CGRect) -> Void
     
-    public typealias InsertOne = (XListView, UIView) -> Void
-    public typealias InsertMulti = (XListView, [UIView]) -> Void
+    public typealias InsertOne = (ListView, UIView) -> Void
+    public typealias InsertMulti = (ListView, [UIView]) -> Void
     
     
     public static func replaceOne(duration: TimeInterval = 0.3) -> ReplaceOne {

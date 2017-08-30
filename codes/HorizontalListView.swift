@@ -1,5 +1,5 @@
 //
-//  XHorizontalListView.swift
+//  HorizontalListView.swift
 //
 //  Created by kaizei on 2017/4/26.
 //  Copyright © 2017年 kaizei. All rights reserved.
@@ -8,7 +8,7 @@
 import UIKit
 
 
-open class XHorizontalListView: XListView {
+open class HorizontalListView: ListView {
     
     override func commonInit() {
         [head, tail].forEach {

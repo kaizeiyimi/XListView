@@ -7,15 +7,13 @@
 
 import UIKit
 
-public class TouchFeedbackView: UIView {
+open class TouchFeedbackView: UIView {
     
     public enum State {
         case active
         case recognized
         case cancelled
     }
-    
-    public let contentView = UIView()
     public var isFeedbackEnabled = true
     
     public var onTap: () -> Void = {}
@@ -45,12 +43,9 @@ public class TouchFeedbackView: UIView {
     }
     
     private func commonInit() {
-        contentView.frame = CGRect(origin: .zero, size: bounds.size)
-        contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        addSubview(contentView)
     }
     
-    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    open override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard beginTouch == nil, let touch = touches.first else { return }
         beginTouch = touch
         resetTimer()
@@ -64,7 +59,7 @@ public class TouchFeedbackView: UIView {
         timer?.resume()
     }
     
-    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    open override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first, let beginTouch = beginTouch else {
             return
         }
@@ -76,7 +71,7 @@ public class TouchFeedbackView: UIView {
         }
     }
     
-    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    open override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard beginTouch != nil else { return }
         beginTouch = nil
         resetTimer()
@@ -84,7 +79,7 @@ public class TouchFeedbackView: UIView {
         setState(.recognized)
     }
     
-    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    open override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard beginTouch != nil else { return }
         resetTimer()
         beginTouch = nil
@@ -190,7 +185,7 @@ public class TouchFeedbackView: UIView {
                     self.selectedBackgroundView = attachSelectedBackgroundView()
                 }
                 
-                UIView.animate(withDuration: 0.25, animations: {
+                UIView.animate(withDuration: 0.35, animations: {
                     self.selectedBackgroundView?.alpha = 0
                 }, completion: { _ in
                     self.colors = nil
