@@ -26,14 +26,7 @@ extension UIView: ListViewDataSourceItem {
 
 // MARK: - XListViewDataSource
 
-public protocol ListViewDataSourceUpdating: class {
-    associatedtype Item
-    
-    var listView: ListView! { get }
-    var items: [Item] { get set }
-}
-
-public class ListViewDataSource<Item>: ListViewDataSourceUpdating where Item: ListViewDataSourceItem {
+open class BaseListViewDataSource<Item> {
     
     public var listView: ListView!
     public var items: [Item] = []
@@ -42,16 +35,9 @@ public class ListViewDataSource<Item>: ListViewDataSourceUpdating where Item: Li
     public init(_ listView: ListView){ self.listView = listView }
 }
 
-public class ListViewPlainDataSource: ListViewDataSourceUpdating {
-    
-    public typealias Item = ListViewDataSourceItem
-    
-    public var listView: ListView!
-    public var items: [Item] = []
-    
-    public init(){}
-    public init(_ listView: ListView){ self.listView = listView }
-}
+open class ListViewDataSource<Item>: BaseListViewDataSource<Item> where Item: ListViewDataSourceItem {}
+
+open class ListViewPlainDataSource: BaseListViewDataSource<ListViewDataSourceItem> {}
 
 
 // MARK: - ListViewDataSourceUpdating
@@ -73,7 +59,7 @@ extension ListViewDataSourceItem {
     }
 }
 
-extension ListViewDataSourceUpdating {
+extension BaseListViewDataSource {
     public func view(by identifier: String?) -> UIView? {
         guard let identifier = identifier else { return nil }
         return listView.managedViews.first{ $0.identifier == identifier }
@@ -100,7 +86,7 @@ extension ListViewDataSourceUpdating {
     }
 }
 
-extension ListViewDataSourceUpdating {
+extension BaseListViewDataSource {
 
     public func insert(items: [Item], at index: Int, animations: Animations.InsertMulti? = Animations.insertMulti()) {
         self.items.insert(contentsOf: items, at: index)

@@ -1,5 +1,5 @@
 //
-//  VerticalListView.swift
+//  VerticalConfigurator.swift
 //
 //  Created by kaizei on 2017/4/26.
 //  Copyright © 2017年 kaizei. All rights reserved.
@@ -8,17 +8,18 @@
 import UIKit
 
 
-open class VerticalListView: ListView {
+final class VerticalConfigurator: Configurator {
     
+    private unowned let listView: ListView
     private var adjustingInsetsBottom: CGFloat = 0
     
-    override func commonInit() {
-        [head, tail].forEach {
-            $0.isUserInteractionEnabled = false
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            addSubview($0)
-        }
-        let views: [String: Any] = ["head": head, "tail": tail, "list": self]
+    private var head: UIView { return listView.head }
+    private var tail: UIView { return listView.tail }
+    
+    init(_ listView: ListView) {
+        self.listView = listView
+
+        let views: [String: Any] = ["head": head, "tail": tail, "list": listView]
         NSLayoutConstraint.activate(
             NSLayoutConstraint.constraints(withVisualFormat: "H:|[head(==list)]|",
                                            options: [], metrics: nil, views: views)
@@ -36,8 +37,8 @@ open class VerticalListView: ListView {
                                            options: [], metrics: nil, views: views)
         )
         
-        spaces[head] = (nil, nil)
-        spaces[tail] = (nil, nil)
+        listView.spaces[head] = (nil, nil)
+        listView.spaces[tail] = (nil, nil)
         stick(head, tail)
         
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
@@ -45,19 +46,19 @@ open class VerticalListView: ListView {
     }
     
     @discardableResult
-    override func attachManagedView(_ view: UIView) -> UIView {
+    func attachManagedView(_ view: UIView) -> UIView {
         view.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(view)
+        listView.addSubview(view)
         NSLayoutConstraint(item: view, attribute: .leading, relatedBy: .equal, toItem: head, attribute: .leading, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: view, attribute: .trailing, relatedBy: .equal, toItem: head, attribute: .trailing, multiplier: 1, constant: 0).isActive = true
-        spaces[view] = (nil, nil)
+        listView.spaces[view] = (nil, nil)
         
         // scrollview
         if let scrollView = view as? UIScrollView {
             let height = NSLayoutConstraint(item: scrollView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 0)
             height.isActive = true
             
-            observeForScrollView(scrollView, onChange: {[weak height] (container, scrollView) in
+            listView.observeForScrollView(scrollView, onChange: {[weak height] (container, scrollView) in
                 let maxHeight = scrollView.contentInset.top + scrollView.contentSize.height + scrollView.contentInset.bottom
                 let containerHeight = container.bounds.height
                 if maxHeight <= containerHeight {
@@ -96,9 +97,9 @@ open class VerticalListView: ListView {
         return view
     }
     
-    override func stick(_ a: UIView, _ b: UIView, inner: [UIView] = []) {
-        spaces[a]?.next?.isActive = false
-        spaces[b]?.prev?.isActive = false
+    func stick(_ a: UIView, _ b: UIView, inner: [UIView] = []) {
+        listView.spaces[a]?.next?.isActive = false
+        listView.spaces[b]?.prev?.isActive = false
         
         let list = [a] + inner + [b]
         for i in 0..<list.count - 1 {
@@ -107,35 +108,35 @@ open class VerticalListView: ListView {
                                            toItem: list[i+1], attribute: .top,
                                            multiplier: 1, constant: 0)
             space.isActive = true
-            spaces[list[i]]?.next = space
-            spaces[list[i+1]]?.prev = space
+            listView.spaces[list[i]]?.next = space
+            listView.spaces[list[i+1]]?.prev = space
         }
     }
     
     @objc private func keyboardWillShow(_ notify: Notification) {
         guard let keyboardFrame = notify.userInfo?[UIKeyboardFrameEndUserInfoKey] as? CGRect else { return }
         DispatchQueue.main.async {
-            
+            let listView = self.listView
             // swift compile bug
             // guard let view = self.managedViews.first({ findFirstResponder(root: $0) != nil }) else { return }
-            guard let index = self.managedViews.index(where: { findFirstResponder(root: $0) != nil }) else { return }
-            let view = self.managedViews[index]
+            guard let index = listView.managedViews.index(where: { findFirstResponder(root: $0) != nil }) else { return }
+            let view = listView.managedViews[index]
             
-            self.contentInset.bottom += keyboardFrame.height - self.adjustingInsetsBottom
-            self.scrollIndicatorInsets.bottom += keyboardFrame.height - self.adjustingInsetsBottom
+            listView.contentInset.bottom += keyboardFrame.height - self.adjustingInsetsBottom
+            listView.scrollIndicatorInsets.bottom += keyboardFrame.height - self.adjustingInsetsBottom
             self.adjustingInsetsBottom = keyboardFrame.height
             
             // act like UITableView
-            let converted = self.convert(keyboardFrame, from: nil)
+            let converted = listView.convert(keyboardFrame, from: nil)
             let bottomDiff = view.frame.maxY - converted.minY
-            let topDiff = self.contentOffset.y + self.contentInset.top - view.frame.minY
-            var offset = self.contentOffset
+            let topDiff = listView.contentOffset.y + listView.contentInset.top - view.frame.minY
+            var offset = listView.contentOffset
             if bottomDiff > 0 {
                 offset.y += bottomDiff
-                self.setContentOffset(offset, animated: true)
+                listView.setContentOffset(offset, animated: true)
             } else if topDiff > 0 {
                 offset.y -= topDiff
-                self.setContentOffset(offset, animated: true)
+                listView.setContentOffset(offset, animated: true)
             }
         }
     }
@@ -145,8 +146,8 @@ open class VerticalListView: ListView {
         let interval = notify.userInfo?[UIKeyboardAnimationDurationUserInfoKey] == nil ? 0 : 0.25
         DispatchQueue.main.async {
             UIView.animate(withDuration: interval, animations: {
-                self.contentInset.bottom -= self.adjustingInsetsBottom
-                self.scrollIndicatorInsets.bottom -= self.adjustingInsetsBottom
+                self.listView.contentInset.bottom -= self.adjustingInsetsBottom
+                self.listView.scrollIndicatorInsets.bottom -= self.adjustingInsetsBottom
             })
             self.adjustingInsetsBottom = 0
         }

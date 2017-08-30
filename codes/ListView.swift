@@ -10,6 +10,12 @@ import UIKit
 
 private var KVOObserverKey = "yimi.kaizei.ListView.Observer.key"
 
+/// internal configurator protocol
+protocol Configurator: class {
+    func attachManagedView(_ view: UIView) -> UIView
+    func stick(_ a: UIView, _ b: UIView, inner: [UIView])
+}
+
 /// abstract super class. use Vertical or Horizontal listView.
 open class ListView: UIScrollView {
     
@@ -19,12 +25,18 @@ open class ListView: UIScrollView {
     let head = UIView()
     let tail = UIView()
     
+    private var configurator: Configurator!
+    
+    /// only for IB use. default is false
+    @IBInspectable public private(set) var horizontal: Bool = false
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
     
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
+    public init(horizontal: Bool) {
+        super.init(frame: .zero)
+        self.horizontal = horizontal
         commonInit()
     }
     
@@ -35,16 +47,21 @@ open class ListView: UIScrollView {
     
     // MARK: - override points
     internal func commonInit() {
-        fatalError("not for directly use! use Vertical or Horizontal listView!")
+        [head, tail].forEach {
+            $0.isUserInteractionEnabled = false
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            addSubview($0)
+        }
+        self.configurator = horizontal ? HorizontalConfigurator(self) : VerticalConfigurator(self)
     }
     
     @discardableResult
     internal func attachManagedView(_ view: UIView) -> UIView {
-        fatalError("not for directly use! use Vertical or Horizontal listView!")
+        return configurator.attachManagedView(view)
     }
     
     internal func stick(_ a: UIView, _ b: UIView, inner: [UIView] = []) {
-        fatalError("not for directly use! use Vertical or Horizontal listView!")
+        configurator.stick(a, b, inner: inner)
     }
     
     internal func removeManagedView(_ view: UIView) {
@@ -57,9 +74,7 @@ open class ListView: UIScrollView {
         view.removeFromSuperview()
     }
     
-    internal func observeForScrollView(
-        _ scrollView: UIScrollView,
-        onChange: @escaping (_ container: ListView, _ scrollView: UIScrollView) -> Void) {
+    internal func observeForScrollView(_ scrollView: UIScrollView, onChange: @escaping (_ container: ListView, _ scrollView: UIScrollView) -> Void) {
         class Observer: NSObject {
             weak var container: ListView?
             weak var scrollView: UIScrollView?
