@@ -23,7 +23,7 @@ open class TouchFeedbackView: UIView {
     
     private var beginTouch: UITouch?
     
-    private let delay = 0.02
+    private let delay = 0.01
     private var timer: DispatchSourceTimer?
     
     private weak var maskBoard: UIView?

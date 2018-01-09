@@ -32,12 +32,17 @@ open class ListView: UIScrollView {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        managedViews.forEach{ removeManagedView($0) }
     }
     
     public init(horizontal: Bool) {
         super.init(frame: .zero)
         self.horizontal = horizontal
         commonInit()
+    }
+    
+    public convenience init() {
+        self.init(horizontal: false)
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -128,6 +133,8 @@ open class ListView: UIScrollView {
             animations(self, removed, inserted) {
                 removed.forEach { self.removeManagedView($0) }
             }
+        } else {
+            removed.forEach { self.removeManagedView($0) }
         }
     }
     

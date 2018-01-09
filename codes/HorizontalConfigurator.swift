@@ -17,6 +17,7 @@ final class HorizontalConfigurator: Configurator {
     
     init(_ listView: ListView) {
         self.listView = listView
+        listView.alwaysBounceHorizontal = true
         
         let views: [String: Any] = ["head": head, "tail": tail, "list": listView]
         NSLayoutConstraint.activate(
@@ -25,8 +26,9 @@ final class HorizontalConfigurator: Configurator {
         )
         NSLayoutConstraint.activate(
             NSLayoutConstraint.constraints(withVisualFormat: "V:[tail(==head)]",
-                                           options: [.alignAllCenterY], metrics: nil, views: views)
+                                           options: [], metrics: nil, views: views)
         )
+        head.centerYAnchor.constraint(equalTo: tail.centerYAnchor).isActive = true
         NSLayoutConstraint.activate(
             NSLayoutConstraint.constraints(withVisualFormat: "H:|[head(0)]",
                                            options: [], metrics: nil, views: views)

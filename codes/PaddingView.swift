@@ -1,12 +1,9 @@
 //
 //  PaddingView.swift
-//  Pods-XListViewDemo
 //
 //  Created by kaizei on 2017/8/31.
+//  Copyright © 2017年 kaizei. All rights reserved.
 //
-
-import UIKit
-
 
 import UIKit
 

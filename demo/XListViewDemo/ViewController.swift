@@ -273,9 +273,9 @@ class ViewController: UIViewController {
         let index = Int(arc4random() % UInt32(dataSource.items.count + 1))
         
 //        if index == 3 {
-            dataSource.insert(item: makeTableViewItem(), at: index, animations: Animations.insertOneFromLeft())
+//            dataSource.insert(item: makeTableViewItem(), at: index, animations: Animations.insertOneFromLeft())
 //        } else {
-//            dataSource.insert(item: makeBoxItem(), at: index, animations: Animations.insertOneFromLeft())
+            dataSource.insert(item: makeBoxItem(), at: index, animations: Animations.insertOneFromLeft())
 //        }
     }
     

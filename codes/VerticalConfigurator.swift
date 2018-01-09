@@ -18,6 +18,7 @@ final class VerticalConfigurator: Configurator {
     
     init(_ listView: ListView) {
         self.listView = listView
+        listView.alwaysBounceVertical = true
 
         let views: [String: Any] = ["head": head, "tail": tail, "list": listView]
         NSLayoutConstraint.activate(
@@ -26,8 +27,9 @@ final class VerticalConfigurator: Configurator {
         )
         NSLayoutConstraint.activate(
             NSLayoutConstraint.constraints(withVisualFormat: "H:[tail(==head)]",
-                                           options: [.alignAllCenterX], metrics: nil, views: views)
+                                           options: [], metrics: nil, views: views)
         )
+        head.centerXAnchor.constraint(equalTo: tail.centerXAnchor).isActive = true
         NSLayoutConstraint.activate(
             NSLayoutConstraint.constraints(withVisualFormat: "V:|[head(0)]",
                                            options: [], metrics: nil, views: views)
@@ -115,8 +117,8 @@ final class VerticalConfigurator: Configurator {
     
     @objc private func keyboardWillShow(_ notify: Notification) {
         guard let keyboardFrame = notify.userInfo?[UIKeyboardFrameEndUserInfoKey] as? CGRect else { return }
+        let listView = self.listView
         DispatchQueue.main.async {
-            let listView = self.listView
             // swift compile bug
             // guard let view = self.managedViews.first({ findFirstResponder(root: $0) != nil }) else { return }
             guard let index = listView.managedViews.index(where: { findFirstResponder(root: $0) != nil }) else { return }
@@ -144,10 +146,11 @@ final class VerticalConfigurator: Configurator {
     @objc private func keyboardWillHide(_ notify: Notification) {
         guard adjustingInsetsBottom != 0 else { return }
         let interval = notify.userInfo?[UIKeyboardAnimationDurationUserInfoKey] == nil ? 0 : 0.25
+        let listView = self.listView
         DispatchQueue.main.async {
             UIView.animate(withDuration: interval, animations: {
-                self.listView.contentInset.bottom -= self.adjustingInsetsBottom
-                self.listView.scrollIndicatorInsets.bottom -= self.adjustingInsetsBottom
+                listView.contentInset.bottom -= self.adjustingInsetsBottom
+                listView.scrollIndicatorInsets.bottom -= self.adjustingInsetsBottom
             })
             self.adjustingInsetsBottom = 0
         }
